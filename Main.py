@@ -29,11 +29,11 @@ class TopBar(tk.Frame):
         self.entry3 = tk.Scale(self, from_=1, to=100, orient=tk.HORIZONTAL)
         self.entry3.grid(row=1, column=2)
 
-        self.start = tk.Button(self, text="START", command=self.startGo)
+        self.start = tk.Button(self, text="START", command=self.start_go)
         self.start.grid(row=0, column=3, rowspan=2)
 
-    def startGo(self):
-        self.parent.topBarStart(self.selectedOption.get(),
+    def start_go(self):
+        self.parent.top_bar_start(self.selectedOption.get(),
                                 self.entry2.get(),
                                 self.entry3.get())
 
@@ -42,22 +42,34 @@ class OptionBar(tk.Frame):
     def __init__(self, parent, color_set):
         tk.Frame.__init__(self, parent)
         self.parent = parent
-        self.colors = tk.Button(self, text="colors",
-                                command=lambda: self.startColor())
-        self.colors.grid(row=1, column=0, columnspan=2)
+        self.color_bttn = tk.Button(self, text="Colors",
+                                command=lambda: self.start_color())
+        self.color_bttn.grid(row=1, column=0, columnspan=2)
         self.curr_color = tk.Canvas(self, height=20, width=20)
         self.color_label = tk.Label(self, text="Current Color: ")
         self.color_label.grid(row=0, column=0)
         self.curr_color.grid(row=0, column=1)
         self.color_sqr = self.curr_color.create_rectangle(0,0,20,20,
                                                           fill=color_set)
+        self.file_label = tk.Label(self, text="File name: ")
+        self.file_label.grid(row=0, column=2)
+        self.file_name = tk.Entry(self)
+        self.file_name.grid(row=0, column=3)
+        self.save_bttn = tk.Button(self, text="Save",
+                                   command=lambda: self.save_message())
+        self.save_bttn.grid(row=1, column=2, columnspan=2)
 
-    def startColor(self):
+    def start_color(self):
         self.colorwin = ColorWindow(self)
 
-    def colorMessage(self, color):
-        self.parent.colorMessage(color)
-        self.curr_color.itemconfigure(self.color_sqr, fill=color)
+    def save_message(self):
+        flnm = self.file_name.get()
+        self.message_to_pattern(["save",flnm])
+
+    def message_to_pattern(self, msg):
+        if msg[0] == "color":
+            self.curr_color.itemconfigure(self.color_sqr, fill=msg[1])
+        self.parent.message_to_pattern(msg)
 
 class ColorWindow(tk.Toplevel):
 
@@ -74,27 +86,27 @@ class ColorWindow(tk.Toplevel):
         tk.Toplevel.__init__(self,parent)
         self.parent = parent
         self.title("Colors")
-        self.makeDropdown()
+        self.make_dropdown()
 
-    def makeDropdown(self):
+    def make_dropdown(self):
         self.selectedOption = tk.StringVar()
         self.selectedOption.set(self._pallets[0]) #Default
         self.list1 = tk.OptionMenu(self, self.selectedOption, *self._pallets,
-                                   command = self.makeColorButtons)
+                                   command = self.make_color_buttons)
         self.list1.pack()
-        self.makeColorButtons("N/A")
-        #self.selectedOption.trace('w', self.makeColorButtons())
+        self.make_color_buttons("N/A")
+        #self.selectedOption.trace('w', self.make_color_buttons())
 
-    def changeButtons(self):
+    def change_buttons(self):
         #self._grid[:] = []
         self.bttns.destroy()
         self.scroll_x.destroy()
-        self.makeColorButtons()
+        self.make_color_buttons()
 
     # Note: event var is NOT used in this func.
     # It's just necessary for the tk.OptionMenu command to work, as an event
     # object is automatically passed on. Pretty annoying, if you ask me!
-    def makeColorButtons(self, event):
+    def make_color_buttons(self, event):
         try:
             self.bttns.destroy()
             self.scroll_x.destroy()
@@ -123,30 +135,32 @@ class ColorWindow(tk.Toplevel):
             x1 = x0 + c_s
             tmp_a = self.bttns.create_rectangle(x0,y0,x1,y1,fill=op)
             self.bttns.tag_bind(tmp_a,'<ButtonPress-1>',
-                                lambda op=op:self.sendColor(op))
+                                lambda op=op:self.send_color(op))
             x0 = x1
             i = i + 1
 
-        #self.bttns.bind('<ButtonPress-1>', self.sendColor(event))
+        #self.bttns.bind('<ButtonPress-1>', self.send_color(event))
         self.bttns.config(xscrollcommand=self.scroll_x.set)
         self.scroll_x.config(command=self.bttns.xview)
 
-    def sendColor(self, color):
-        col = self.determineColor(color.x, color.y)
+    def send_color(self, color):
+        col = self.determine_color(color.x, color.y)
         if col:
-            #aka. determineColor() didn't send back None
+            #aka. determine_color() didn't send back None
             a = color.x
             b = color.y
             print("clicked at ", a, "and", b)
-            self.parent.colorMessage(col)
+            self.message_to_pattern(["color",col])
 
-    def determineColor(self, x, y):
+    def determine_color(self, x, y):
         true_x = self.bttns.canvasx(x)
         true_y = self.bttns.canvasy(y)
         items = self.bttns.find_closest(true_x,true_y)
         rect_id = items[0]
         return self.bttns.itemcget(rect_id, "fill")
 
+    def message_to_pattern(self, msg):
+        self.parent.message_to_pattern(msg)
 
 class MainApp(tk.Tk):
 
@@ -154,6 +168,7 @@ class MainApp(tk.Tk):
     canvasFrame = ""
     _current_color = "#ffffff"
     _background = "#dddddd"
+    _images_folder = "BeadingDesignImages/"
 
     def __init__(self, parent):
         tk.Tk.__init__(self, parent)
@@ -162,7 +177,7 @@ class MainApp(tk.Tk):
         self.topBar = TopBar(self, stitches=self.stitch_choices)
         self.topBar.pack(anchor=tk.NW)
 
-    def topBarStart(self, so, row, col):
+    def top_bar_start(self, so, row, col):
         if self.canvasFrame != "":
             self.canvasFrame.destroy()
             self.optionsFrame.destroy()
@@ -171,15 +186,20 @@ class MainApp(tk.Tk):
         print(col)
         if so == self.stitch_choices[0]:
             self.canvasFrame = ptrn.Square(self, row=row, col=col,
-                                           color=self._current_color)
+                                           color=self._current_color,
+                                           imfldr = self._images_folder)
             self.canvasFrame.pack(fill=tk.BOTH, expand=tk.YES)
             self.optionsFrame = OptionBar(self, self._current_color)
             self.optionsFrame.pack(side=tk.BOTTOM, anchor=tk.E)
 
-    def colorMessage(self, color):
-        self._current_color = color
-        self.canvasFrame.set_color(color)
-        print(self._current_color)
+    # A message passed through message_to_pattern MUST be an array of len()=2,
+    #  with strings. The first says what the message is about (one of "color"
+    #  or "save"), and the second has the details (either the color, or the
+    #  the file to save to).
+    def message_to_pattern(self, message):
+        if message[1] == "color":
+            self._current_color = message[2]
+        self.canvasFrame.message_to_pattern(message)
 
 if __name__ == '__main__':
     app = MainApp(None)

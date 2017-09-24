@@ -12,12 +12,14 @@ class Pattern(tk.Frame):
     canvas_width = 0
     curr_color = ""
     canvas = "" #This is set in subclasses! b/c stitches are different
+    _images_folder = ""
 
-    def __init__(self, parent, row, col, color):
+    def __init__(self, parent, row, col, color, imfldr):
         tk.Frame.__init__(self, parent)
         self.parent = parent
         self.row = row
         self.col = col
+        self._images_folder = imfldr
         self.set_color(color)
 
     def get_size11(self):
@@ -32,6 +34,19 @@ class Pattern(tk.Frame):
         self.curr_color = color
     def get_color(self):
         return self.curr_color
+    def get_folder(self):
+        return self._images_folder
+
+    def message_to_pattern(self, m):
+        m_type = m[0]
+        if m_type == "color":
+            #A new curr_color has been sent
+            self.set_color(m[1])
+        elif m_type == "save":
+            #Saving the canvas
+            self.save_canvas(m[1])
+        else:
+            print("bad message sent!")
 
     def handle_color(self, event):
         true_x = self.canvas.canvasx(event.x)
@@ -40,6 +55,12 @@ class Pattern(tk.Frame):
         print(items)
         oval_id = items[0]
         self.canvas.itemconfigure(oval_id, fill=self.get_color())
+
+    def save_canvas(self, file_name):
+        file_path = self.get_folder() + file_name + ".ps"
+        self.canvas.update()
+        self.canvas.postscript(file=file_path)
+        print("Saved! at:", file_path)
 
     # SUBCLASSES SHOULD HAVE THE FOLLOWING:
 
@@ -51,8 +72,8 @@ class Square(Pattern):
     # For reference:
     # https://www.beadaholique.com/media/wysiwyg/beading-patterns-pngs/Square-Stitch_1000.png
 
-    def __init__(self, parent, row, col, color):
-        Pattern.__init__(self, parent, row, col, color)
+    def __init__(self, parent, row, col, color, imfldr):
+        Pattern.__init__(self, parent, row, col, color, imfldr)
 
         self.scroll_x = tk.Scrollbar(self, orient=tk.HORIZONTAL)
         self.scroll_x.pack(side=tk.BOTTOM, fill=tk.X)
