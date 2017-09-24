@@ -10,12 +10,15 @@ class Pattern(tk.Frame):
     size_11_round = [18, 18]
     canvas_height = 0
     canvas_width = 0
+    curr_color = ""
+    canvas = "" #This is set in subclasses! b/c stitches are different
 
-    def __init__(self, parent, row, col):
+    def __init__(self, parent, row, col, color):
         tk.Frame.__init__(self, parent)
         self.parent = parent
         self.row = row
         self.col = col
+        self.set_color(color)
 
     def get_size11(self):
         return self.size_11_round
@@ -25,6 +28,18 @@ class Pattern(tk.Frame):
         return self.row
     def get_col(self):
         return self.col
+    def set_color(self, color):
+        self.curr_color = color
+    def get_color(self):
+        return self.curr_color
+
+    def handle_color(self, event):
+        true_x = self.canvas.canvasx(event.x)
+        true_y = self.canvas.canvasy(event.y)
+        items = self.canvas.find_closest(true_x, true_y)
+        print(items)
+        oval_id = items[0]
+        self.canvas.itemconfigure(oval_id, fill=self.get_color())
 
     # SUBCLASSES SHOULD HAVE THE FOLLOWING:
 
@@ -36,12 +51,8 @@ class Square(Pattern):
     # For reference:
     # https://www.beadaholique.com/media/wysiwyg/beading-patterns-pngs/Square-Stitch_1000.png
 
-    # This maintains the "master" Pattern
-    # aka. it keeps track of all the ovals made, in a nested array.
-    master_square = []
-
-    def __init__(self, parent, row, col):
-        Pattern.__init__(self, parent, row, col)
+    def __init__(self, parent, row, col, color):
+        Pattern.__init__(self, parent, row, col, color)
 
         self.scroll_x = tk.Scrollbar(self, orient=tk.HORIZONTAL)
         self.scroll_x.pack(side=tk.BOTTOM, fill=tk.X)
@@ -68,9 +79,9 @@ class Square(Pattern):
         r = self.get_row()
         c = self.get_col()
         b = self.get_size11()
+        clr = self.get_color()
         whtspc_x = math.floor(b[0]/2)
         whtspc_y = math.floor(b[1]/2)
-        #python_green = "#476042"
 
         # Drawing the top row of numbers
         y0 = whtspc_y
@@ -91,9 +102,9 @@ class Square(Pattern):
                 x0 = j*b[0] + whtspc_x
                 x1 = x0 + b[0]
                 y1 = y0 + b[1]
-                self.canvas.create_oval(x0,y0,x1,y1)
-                #tmp.append(tmp_id)
-            #self.master_square.append()
+                tmp_a = self.canvas.create_oval(x0,y0,x1,y1,fill=clr)
+                self.canvas.tag_bind(tmp_a, '<ButtonPress-1>',
+                                     self.handle_color)
 
         self.canvas.config(yscrollcommand=self.scroll_y.set,
                            xscrollcommand=self.scroll_x.set)

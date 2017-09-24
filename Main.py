@@ -39,18 +39,25 @@ class TopBar(tk.Frame):
 
 class OptionBar(tk.Frame):
 
-    def __init__(self, parent):
+    def __init__(self, parent, color_set):
         tk.Frame.__init__(self, parent)
         self.parent = parent
         self.colors = tk.Button(self, text="colors",
                                 command=lambda: self.startColor())
-        self.colors.pack()
+        self.colors.grid(row=1, column=0, columnspan=2)
+        self.curr_color = tk.Canvas(self, height=20, width=20)
+        self.color_label = tk.Label(self, text="Current Color: ")
+        self.color_label.grid(row=0, column=0)
+        self.curr_color.grid(row=0, column=1)
+        self.color_sqr = self.curr_color.create_rectangle(0,0,20,20,
+                                                          fill=color_set)
 
     def startColor(self):
         self.colorwin = ColorWindow(self)
 
     def colorMessage(self, color):
         self.parent.colorMessage(color)
+        self.curr_color.itemconfigure(self.color_sqr, fill=color)
 
 class ColorWindow(tk.Toplevel):
 
@@ -58,8 +65,9 @@ class ColorWindow(tk.Toplevel):
                              "#444444", "#555555", "#666666", "#777777",
                              "#888888", "#999999", "#aaaaaa", "#bbbbbb",
                              "#cccccc", "#dddddd", "#eeeeee", "#ffffff"],
-               "Option": []}
-    _pallets = ["grayscale", "Option"]
+               "basics": ["#ff0000", "#ff9900", "#ffff00", "#00cc00",
+                          "#0033cc", "#660099"]}
+    _pallets = ["grayscale", "basics"]
     _color_size = 20
 
     def __init__(self, parent):
@@ -71,17 +79,28 @@ class ColorWindow(tk.Toplevel):
     def makeDropdown(self):
         self.selectedOption = tk.StringVar()
         self.selectedOption.set(self._pallets[0]) #Default
-        self.list1 = tk.OptionMenu(self, self.selectedOption, *self._pallets)
+        self.list1 = tk.OptionMenu(self, self.selectedOption, *self._pallets,
+                                   command = self.makeColorButtons)
         self.list1.pack()
-        self.makeColorButtons()
-        self.selectedOption.trace('w', self.changeButtons())
+        self.makeColorButtons("N/A")
+        #self.selectedOption.trace('w', self.makeColorButtons())
 
     def changeButtons(self):
+        #self._grid[:] = []
         self.bttns.destroy()
         self.scroll_x.destroy()
         self.makeColorButtons()
 
-    def makeColorButtons(self):
+    # Note: event var is NOT used in this func.
+    # It's just necessary for the tk.OptionMenu command to work, as an event
+    # object is automatically passed on. Pretty annoying, if you ask me!
+    def makeColorButtons(self, event):
+        try:
+            self.bttns.destroy()
+            self.scroll_x.destroy()
+            self._grid[:] = []
+        except AttributeError:
+            pass
         curr = self.selectedOption.get()
         col_len = len(self._colors[curr])
         c_s = self._color_size
@@ -90,27 +109,44 @@ class ColorWindow(tk.Toplevel):
 
         self.bttns = tk.Canvas(self,scrollregion=(0,0,c_w, c_h), height=c_h,
                                width=c_w)
-        self.bttns.pack(side=tk.TOP, fill=tk.X, expand=tk.TRUE)
+        self.bttns.pack(fill=tk.X, expand=tk.TRUE)
         self.bttns.configure(highlightthickness=0)
 
         self.scroll_x = tk.Scrollbar(self, orient=tk.HORIZONTAL)
-        self.scroll_x.pack(fill=tk.X)
+        self.scroll_x.pack(side=tk.BOTTOM, fill=tk.X)
 
         x0 = math.floor(c_s/2)
         y0 = math.floor(c_s/2)
         y1 = y0 + c_s
+        i = 0
         for op in self._colors[curr]:
             x1 = x0 + c_s
             tmp_a = self.bttns.create_rectangle(x0,y0,x1,y1,fill=op)
             self.bttns.tag_bind(tmp_a,'<ButtonPress-1>',
                                 lambda op=op:self.sendColor(op))
             x0 = x1
+            i = i + 1
 
+        #self.bttns.bind('<ButtonPress-1>', self.sendColor(event))
         self.bttns.config(xscrollcommand=self.scroll_x.set)
         self.scroll_x.config(command=self.bttns.xview)
 
     def sendColor(self, color):
-        self.parent.colorMessage(color)
+        col = self.determineColor(color.x, color.y)
+        if col:
+            #aka. determineColor() didn't send back None
+            a = color.x
+            b = color.y
+            print("clicked at ", a, "and", b)
+            self.parent.colorMessage(col)
+
+    def determineColor(self, x, y):
+        true_x = self.bttns.canvasx(x)
+        true_y = self.bttns.canvasy(y)
+        items = self.bttns.find_closest(true_x,true_y)
+        rect_id = items[0]
+        return self.bttns.itemcget(rect_id, "fill")
+
 
 class MainApp(tk.Tk):
 
@@ -134,13 +170,15 @@ class MainApp(tk.Tk):
         print(row)
         print(col)
         if so == self.stitch_choices[0]:
-            self.canvasFrame = ptrn.Square(self, row=row, col=col)
+            self.canvasFrame = ptrn.Square(self, row=row, col=col,
+                                           color=self._current_color)
             self.canvasFrame.pack(fill=tk.BOTH, expand=tk.YES)
-            self.optionsFrame = OptionBar(self)
-            self.optionsFrame.pack(side=tk.BOTTOM)
+            self.optionsFrame = OptionBar(self, self._current_color)
+            self.optionsFrame.pack(side=tk.BOTTOM, anchor=tk.E)
 
     def colorMessage(self, color):
         self._current_color = color
+        self.canvasFrame.set_color(color)
         print(self._current_color)
 
 if __name__ == '__main__':
