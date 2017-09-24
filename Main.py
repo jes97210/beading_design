@@ -2,6 +2,7 @@
 import tkinter as tk
 import Pattern as ptrn
 import math
+import os
 
 class TopBar(tk.Frame):
 
@@ -176,6 +177,7 @@ class MainApp(tk.Tk):
         self.title("BeadingDesign")
         self.topBar = TopBar(self, stitches=self.stitch_choices)
         self.topBar.pack(anchor=tk.NW)
+        os.makedirs(self._images_folder, exist_ok=True)
 
     def top_bar_start(self, so, row, col):
         if self.canvasFrame != "":
