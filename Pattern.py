@@ -124,7 +124,7 @@ class Square(Pattern):
                 x1 = x0 + b[0]
                 y1 = y0 + b[1]
                 tmp_a = self.canvas.create_oval(x0,y0,x1,y1,fill=clr)
-                self.canvas.tag_bind(tmp_a, '<ButtonPress-1>',
+                self.canvas.tag_bind(tmp_a, '<B1-Motion>',
                                      self.handle_color)
 
         self.canvas.config(yscrollcommand=self.scroll_y.set,
