@@ -6,39 +6,53 @@ import os
 
 class TopBar(tk.Frame):
 
-    _sc = []
+    # This is the bar on the top of the window
 
-    def __init__(self, parent, stitches):
+    _sc = []
+    _bd = []
+
+    def __init__(self, parent, stitches, beads):
         tk.Frame.__init__(self, parent)
         self.parent = parent
         self._sc = stitches
+        self._bd = beads
 
-        self.label1 = tk.Label(self, text="Stitch")
-        self.label1.grid(row=0, column=0)
-        self.selectedOption = tk.StringVar()
-        self.selectedOption.set(self._sc[0]) #Default
-        self.list1 = tk.OptionMenu(self, self.selectedOption, *self._sc)
-        self.list1.grid(row=1, column=0, sticky="S")
+        self.label_s = tk.Label(self, text="Stitch")
+        self.label_s.grid(row=0, column=0)
+        self.selectedOption_s = tk.StringVar()
+        self.selectedOption_s.set(self._sc[0]) #Default
+        self.list_s = tk.OptionMenu(self, self.selectedOption_s, *self._sc)
+        self.list_s.grid(row=1, column=0, sticky="S")
 
-        self.label2 = tk.Label(self, text="Rows")
-        self.label2.grid(row=0, column=1)
-        self.entry2 = tk.Scale(self, from_=1, to=100, orient=tk.HORIZONTAL)
-        self.entry2.grid(row=1, column=1)
+        self.label_b = tk.Label(self, text="Bead Type")
+        self.label_b.grid(row=0, column=1)
+        self.selectedOption_b = tk.StringVar()
+        self.selectedOption_b.set(self._bd[0]) #Default
+        self.list_b = tk.OptionMenu(self, self.selectedOption_b, *self._bd)
+        self.list_b.grid(row=1, column=1, sticky="S")
 
-        self.label3 = tk.Label(self, text="Columns")
-        self.label3.grid(row=0, column=2)
-        self.entry3 = tk.Scale(self, from_=1, to=100, orient=tk.HORIZONTAL)
-        self.entry3.grid(row=1, column=2)
+        self.label_r = tk.Label(self, text="Rows")
+        self.label_r.grid(row=0, column=2)
+        self.entry_r = tk.Scale(self, from_=1, to=100, orient=tk.HORIZONTAL)
+        self.entry_r.grid(row=1, column=2)
+
+        self.label_c = tk.Label(self, text="Columns")
+        self.label_c.grid(row=0, column=3)
+        self.entry_c = tk.Scale(self, from_=1, to=100, orient=tk.HORIZONTAL)
+        self.entry_c.grid(row=1, column=3)
 
         self.start = tk.Button(self, text="START", command=self.start_go)
-        self.start.grid(row=0, column=3, rowspan=2)
+        self.start.grid(row=0, column=4, rowspan=2)
 
     def start_go(self):
-        self.parent.top_bar_start(self.selectedOption.get(),
-                                self.entry2.get(),
-                                self.entry3.get())
+        self.parent.top_bar_start(self.selectedOption_s.get(),
+                                  self.selectedOption_b.get(),
+                                  self.entry_r.get(),
+                                  self.entry_c.get())
 
 class OptionBar(tk.Frame):
+
+    # This is the bar on the bottom of the main window.
 
     def __init__(self, parent, color_set):
         tk.Frame.__init__(self, parent)
@@ -74,6 +88,8 @@ class OptionBar(tk.Frame):
 
 class ColorWindow(tk.Toplevel):
 
+    # This is the color window that opens in another window.
+
     _colors = {"grayscale": ["#000000", "#111111", "#222222", "#333333",
                              "#444444", "#555555", "#666666", "#777777",
                              "#888888", "#999999", "#aaaaaa", "#bbbbbb",
@@ -99,7 +115,6 @@ class ColorWindow(tk.Toplevel):
         #self.selectedOption.trace('w', self.make_color_buttons())
 
     def change_buttons(self):
-        #self._grid[:] = []
         self.bttns.destroy()
         self.scroll_x.destroy()
         self.make_color_buttons()
@@ -166,6 +181,7 @@ class ColorWindow(tk.Toplevel):
 class MainApp(tk.Tk):
 
     stitch_choices = ["Square","Not an Option"]
+    bead_choices = ["size_11_round", "size_11_seed", "size_11_cylinder"]
     canvasFrame = ""
     _current_color = "#ffffff"
     _background = "#dddddd"
@@ -175,11 +191,12 @@ class MainApp(tk.Tk):
         tk.Tk.__init__(self, parent)
         self.parent = parent
         self.title("BeadingDesign")
-        self.topBar = TopBar(self, stitches=self.stitch_choices)
+        self.topBar = TopBar(self, stitches=self.stitch_choices,
+                                   beads=self.bead_choices)
         self.topBar.pack(anchor=tk.NW)
         os.makedirs(self._images_folder, exist_ok=True)
 
-    def top_bar_start(self, so, row, col):
+    def top_bar_start(self, so, bd, row, col):
         if self.canvasFrame != "":
             self.canvasFrame.destroy()
             self.optionsFrame.destroy()
@@ -189,7 +206,8 @@ class MainApp(tk.Tk):
         if so == self.stitch_choices[0]:
             self.canvasFrame = ptrn.Square(self, row=row, col=col,
                                            color=self._current_color,
-                                           imfldr = self._images_folder)
+                                           imfldr = self._images_folder,
+                                           bead = bd)
             self.canvasFrame.pack(fill=tk.BOTH, expand=tk.YES)
             self.optionsFrame = OptionBar(self, self._current_color)
             self.optionsFrame.pack(side=tk.BOTTOM, anchor=tk.E)
