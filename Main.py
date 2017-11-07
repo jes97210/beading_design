@@ -180,8 +180,8 @@ class ColorWindow(tk.Toplevel):
 
 class MainApp(tk.Tk):
 
-    stitch_choices = ["Square","Not an Option"]
-    bead_choices = ["size_11_round", "size_11_seed", "size_11_cylinder"]
+    _stitch_choices = ["Square","Brick","Herringbone","Not an Option"]
+    _bead_choices = ["size_11_round", "size_11_seed", "size_11_cylinder"]
     canvasFrame = ""
     _current_color = "#ffffff"
     _background = "#dddddd"
@@ -191,26 +191,47 @@ class MainApp(tk.Tk):
         tk.Tk.__init__(self, parent)
         self.parent = parent
         self.title("BeadingDesign")
-        self.topBar = TopBar(self, stitches=self.stitch_choices,
-                                   beads=self.bead_choices)
+        self.topBar = TopBar(self, stitches=self._stitch_choices,
+                                   beads=self._bead_choices)
         self.topBar.pack(anchor=tk.NW)
         os.makedirs(self._images_folder, exist_ok=True)
 
     def top_bar_start(self, so, bd, row, col):
-        if self.canvasFrame != "":
+        try:
             self.canvasFrame.destroy()
             self.optionsFrame.destroy()
+        except AttributeError:
+            pass
         print(so)
         print(row)
         print(col)
-        if so == self.stitch_choices[0]:
+        try:
+            self.pattern_start(so, bd, row, col)
+            self.canvasFrame.pack(fill=tk.BOTH, expand=tk.YES)
+            self.optionsFrame = OptionBar(self, self._current_color)
+            self.optionsFrame.pack(side=tk.BOTTOM, anchor=tk.E)
+        except ValueError as ve:
+            self.canvasFrame = tk.Label(self, text=ve)
+            self.canvasFrame.pack()
+
+    def pattern_start(self, so, bd, row, col):
+        if so == self._stitch_choices[0]:
             self.canvasFrame = ptrn.Square(self, row=row, col=col,
                                            color=self._current_color,
                                            imfldr = self._images_folder,
                                            bead = bd)
-            self.canvasFrame.pack(fill=tk.BOTH, expand=tk.YES)
-            self.optionsFrame = OptionBar(self, self._current_color)
-            self.optionsFrame.pack(side=tk.BOTTOM, anchor=tk.E)
+        elif so == self._stitch_choices[1]:
+            self.canvasFrame = ptrn.Brick(self, row=row, col=col,
+                                           color=self._current_color,
+                                           imfldr = self._images_folder,
+                                           bead = bd)
+        elif so == self._stitch_choices[2]:
+            self.canvasFrame = ptrn.Herringbone(self, row=row, col=col,
+                                               color=self._current_color,
+                                               imfldr = self._images_folder,
+                                               bead = bd)
+        else:
+            raise ValueError("No pattern exists for selected stitch")
 
     # A message passed through message_to_pattern MUST be an array of len()=2,
     #  with strings. The first says what the message is about (one of "color"
