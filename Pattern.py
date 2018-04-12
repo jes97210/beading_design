@@ -43,6 +43,8 @@ class Pattern(tk.Frame):
         self.scroll_y.pack(side=tk.RIGHT, fill=tk.Y)
 
         self.canvas = tk.Canvas(self,scrollregion=(0,0,wid, hig))
+        self.canvas_width = wid
+        self.canvas_height = hig
         self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=tk.TRUE)
         # This makes sure that beads aren't cut off at the edges.
         self.canvas.configure(highlightthickness=0, borderwidth=0)
@@ -90,8 +92,9 @@ class Pattern(tk.Frame):
 
     def save_canvas(self, file_name):
         file_path = self.get_folder() + file_name + ".ps"
-        self.canvas.update()
-        self.canvas.postscript(file=file_path)
+        #self.canvas.update()
+        self.canvas.postscript(file=file_path, height=self.canvas_height,
+                               width=self.canvas_width)
         print("Saved! at:", file_path)
 
     # Takes: self, point (x0,y0), rotation rtn (ASSUMED in degrees), array of
