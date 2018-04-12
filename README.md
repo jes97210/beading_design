@@ -1,5 +1,10 @@
 # beading_design
-A Python application where the user can design beading patterns
+A Python application where the user can design beading patterns.
+
+Current stitches include:
+- Square
+- Brick (can simulate Peyote)
+- Herringbone
 
 This program was writen in Python v. 3.6.0
 
