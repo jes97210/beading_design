@@ -76,6 +76,13 @@ class OptionBar(tk.Frame):
 
     def start_color(self):
         self.colorwin = ColorWindow(self)
+        self.color_bttn.config(state='disable')
+
+        def close_win():
+            self.colorwin.destroy()
+            self.color_bttn.config(state='normal')
+        
+        self.colorwin.protocol("WM_DELETE_WINDOW", close_win)
 
     def save_message(self):
         flnm = self.file_name.get()
@@ -89,20 +96,23 @@ class OptionBar(tk.Frame):
 class ColorWindow(tk.Toplevel):
 
     # This is the color window that opens in another window.
-
-    _colors = {"grayscale": ["#000000", "#111111", "#222222", "#333333",
-                             "#444444", "#555555", "#666666", "#777777",
-                             "#888888", "#999999", "#aaaaaa", "#bbbbbb",
-                             "#cccccc", "#dddddd", "#eeeeee", "#ffffff"],
-               "basics": ["#ff0000", "#ff9900", "#ffff00", "#00cc00",
-                          "#0033cc", "#660099"]}
-    _pallets = ["grayscale", "basics"]
+    _pallets_file = "color_pallets.tsv"
+    _colors = {}
+    _pallets = []
     _color_size = 20
 
     def __init__(self, parent):
         tk.Toplevel.__init__(self,parent)
         self.parent = parent
         self.title("Colors")
+        tmp = self._pallets_file
+        with open(tmp, "rU") as f:
+            for line in f:
+                print(line)
+                arr = line.strip().split("\t")
+                print(arr)
+                self._colors[arr[0]] = arr[1:]
+                self._pallets.append(arr[0])
         self.make_dropdown()
 
     def make_dropdown(self):
