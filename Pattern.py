@@ -104,7 +104,7 @@ class Pattern(tk.Frame):
     # REMEMBER: points is NOT an array of tuples, just an array where the even
     #  indices have x coordinates, and the odd indicies have y coordinates.
     # ALSO: A tkinter canvas has (0,0) at the top left. SO, the canvas is
-    #  quadrant I but it oriented more like quadrant II. Just incase there's
+    #  quadrant I but it oriented more like quadrant IV. Just incase there's
     #  confusion when reading this...
     def rotate_around_point(self, x0, y0, rtn, points):
         a = rtn > 90
